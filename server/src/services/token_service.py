@@ -63,8 +63,9 @@ class TokenService:
         return {
             "order_number": order.order_number,
             "context": order.context,
-            "organization_name": order.organization.name,
-            "organization_logo": order.organization.logo_url,
+            "organization_name": (order.organization.brand_name or order.organization.name),
+            "organization_logo": (order.organization.brand_logo_url or order.organization.logo_url),
+            "hide_saegim": bool(order.organization.hide_saegim),
             "proof_url": f"/uploads/{proof.file_path}",
             "uploaded_at": proof.uploaded_at,
         }

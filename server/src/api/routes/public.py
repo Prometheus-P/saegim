@@ -1,13 +1,18 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, BackgroundTasks
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY, HTTP_429_TOO_MANY_REQUESTS
 
 from src.core.database import get_db
+from src.core.config import settings
 from src.services.token_service import TokenService
 from src.services.proof_service import ProofService
+from src.services.short_link_service import ShortLinkService
+from src.services.short_link_service import ShortLinkService
 from src.schemas import PublicOrderSummary, ProofUploadResponse, PublicProofResponse
 from src.utils.rate_limiter import limiter, get_rate_limit
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +44,9 @@ async def get_order_by_token(
     return PublicOrderSummary(
         order_number=order.order_number,
         context=order.context,
-        organization_name=order.organization.name,
-        organization_logo=order.organization.logo_url,
+        organization_name=(order.organization.brand_name or order.organization.name),
+        organization_logo=(order.organization.brand_logo_url or order.organization.logo_url),
+        hide_saegim=bool(order.organization.hide_saegim),
     )
 
 
@@ -141,3 +147,41 @@ async def get_proof(
         proof_url=proof_data["proof_url"],
         uploaded_at=proof_data["uploaded_at"],
     )
+
+
+@router.get("/s/{code}")
+@limiter.limit(get_rate_limit())
+async def resolve_short(
+    request: Request,
+    code: str,
+    db: Session = Depends(get_db),
+):
+    """Resolve short code to canonical public proof URL.
+
+    - Returns JSON by default: {"target_url": ...}
+    - If the client prefers HTML, returns 302 redirect.
+    """
+    code = (code or "").strip().upper()
+    if not code:
+        raise HTTPException(status_code=HTTP_422_UNPROCESSABLE_ENTITY, detail="SHORT_CODE_REQUIRED")
+
+    link = ShortLinkService(db).resolve(code)
+    if not link:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="SHORT_NOT_FOUND")
+
+    # Prefer request host for white-label domain routing, fallback to WEB_BASE_URL
+    xf_proto = request.headers.get("x-forwarded-proto")
+    xf_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if xf_host:
+        proto = (xf_proto or request.url.scheme or "https").split(",")[0].strip()
+        host = xf_host.split(",")[0].strip()
+        base = f"{proto}://{host}".rstrip("/")
+    else:
+        base = settings.WEB_BASE_URL.rstrip("/")
+    target_url = f"{base}{link.target_path}/{link.target_token}"
+
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept and "application/json" not in accept:
+        return RedirectResponse(url=target_url, status_code=302)
+
+    return {"target_url": target_url}

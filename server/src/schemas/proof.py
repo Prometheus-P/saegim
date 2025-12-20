@@ -19,5 +19,6 @@ class PublicProofResponse(BaseModel):
     context: Optional[str] = None
     organization_name: str
     organization_logo: Optional[str] = None
+    hide_saegim: bool = False
     proof_url: str
     uploaded_at: datetime

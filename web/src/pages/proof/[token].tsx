@@ -1,81 +1,124 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { UploadForm } from '../../components/UploadForm';
-import { getOrderByToken, OrderSummary } from '../../services/api';
+import { getOrderByToken, getProofByToken, OrderSummary, ProofData } from '../../services/api';
 
-const ProofPage = () => {
+export default function ProofPage() {
   const router = useRouter();
   const { token } = router.query;
+  const t = typeof token === 'string' ? token : '';
+
   const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [existingProof, setExistingProof] = useState<ProofData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof token === 'string') {
-      setIsLoading(true);
+    if (!t) return;
+    (async () => {
+      setLoading(true);
       setError(null);
+      setOrder(null);
+      setExistingProof(null);
 
-      getOrderByToken(token)
-        .then(data => {
-          if (data) {
-            setOrder(data);
-          } else {
-            setError('유효하지 않거나 만료된 토큰입니다.');
-          }
-        })
-        .catch((err) => {
-          if (err.message === 'RATE_LIMITED') {
-            setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
-          } else {
-            setError('주문 정보를 불러오는데 실패했습니다.');
-          }
-        })
-        .finally(() => setIsLoading(false));
-    }
-  }, [token]);
+      const o = await getOrderByToken(t);
+      if (o) {
+        setOrder(o);
+        return;
+      }
 
-  if (isLoading) {
-    return (
-      <div className="container">
-        <h1>로딩 중...</h1>
-      </div>
-    );
-  }
+      // 토큰이 이미 사용/만료된 경우라도, 증빙이 있으면 확인 페이지로 안내
+      const p = await getProofByToken(t);
+      if (p) {
+        setExistingProof(p);
+        return;
+      }
 
-  if (error) {
-    return (
-      <div className="container">
-        <h1>오류</h1>
-        <p>{error}</p>
-        <p style={{ marginTop: '1rem', color: '#666' }}>
-          문제가 계속되면 업체에 문의해주세요.
-        </p>
-      </div>
-    );
-  }
+      setError('유효하지 않거나 만료된 토큰입니다.');
+    })()
+      .catch((err: any) => {
+        if (err?.message === 'RATE_LIMITED') {
+          setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError('주문 정보를 불러오는데 실패했습니다.');
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [t]);
+
+  const brandName = order?.organization_name || existingProof?.organization_name || '배송 증빙';
+  const brandLogo = order?.organization_logo || existingProof?.organization_logo || null;
+  const hideSaegim = Boolean(order?.hide_saegim || existingProof?.hide_saegim);
 
   return (
-    <div className="container">
-      {order?.organization_logo && (
-        <img
-          src={order.organization_logo}
-          alt={order.organization_name}
-          style={{ maxWidth: '150px', marginBottom: '1rem' }}
-        />
-      )}
-      <h1>배송 증빙</h1>
-      {order && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h2>주문번호: {order.order_number}</h2>
-          {order.context && <p>{order.context}</p>}
-          <p style={{ color: '#666', fontSize: '0.9rem' }}>
-            {order.organization_name}
-          </p>
+    <div className="page">
+      <div className="container sm">
+        <div className="card flat" style={{ marginBottom: 14 }}>
+          <div className="brand" style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+              {brandLogo && (
+                <img
+                  src={brandLogo}
+                  alt={brandName}
+                  style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }}
+                />
+              )}
+              <div>
+                <div className="name">{brandName}</div>
+                <div className="tag">배송 증빙</div>
+              </div>
+              <div style={{ marginLeft: 'auto' }} className="muted">
+                {!hideSaegim ? 'Powered by 새김' : ''}
+              </div>
+            </div>
+          </div>
+
+          {loading && <div className="muted">로딩 중…</div>}
+
+          {!loading && error && (
+            <div className="danger">
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>오류</div>
+              <div>{error}</div>
+              <div className="muted" style={{ marginTop: 8 }}>문제가 계속되면 업체에 문의해주세요.</div>
+            </div>
+          )}
+
+          {!loading && existingProof && (
+            <div className="ok">
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>이미 업로드 완료</div>
+              <div className="muted">확인 링크로 이동하세요.</div>
+              <div style={{ marginTop: 10 }}>
+                <Link className="btn secondary" href={`/p/${t}`}>확인 페이지 열기</Link>
+              </div>
+            </div>
+          )}
+
+          {!loading && order && (
+            <div style={{ marginTop: 10 }}>
+              {order.organization_logo && (
+                <img
+                  src={order.organization_logo}
+                  alt={order.organization_name}
+                  style={{ maxWidth: 140, maxHeight: 48, objectFit: 'contain', marginBottom: 10 }}
+                />
+              )}
+              <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>사진 1장 업로드</div>
+              <div className="muted">주문번호: <b>{order.order_number}</b> {order.context ? `· ${order.context}` : ''}</div>
+              <div className="muted">업체: {order.organization_name}</div>
+            </div>
+          )}
         </div>
-      )}
-      <UploadForm token={token as string} />
+
+        {!loading && order && (
+          <div className="card">
+            <div className="muted" style={{ marginBottom: 10 }}>
+              안내: QR 스캔 → 촬영 → 업로드. 업로드 완료 후 발주자/수령자에게 링크가 전달됩니다.
+            </div>
+            <UploadForm token={t} />
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default ProofPage;
+}

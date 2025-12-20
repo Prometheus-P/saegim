@@ -13,6 +13,9 @@ class NotificationLog(BaseModel):
     channel: NotificationChannel
     status: NotificationStatus
     phone_hash: str  # SHA-256 hash, not actual phone
+    provider_request_id: Optional[str] = None
+    message_url: Optional[str] = None
+    error_code: Optional[str] = None
     error_message: Optional[str] = None
     created_at: datetime
     sent_at: Optional[datetime] = None

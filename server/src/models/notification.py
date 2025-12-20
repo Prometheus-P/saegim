@@ -42,6 +42,8 @@ class Notification(Base):
     # Provider response tracking
     provider_request_id = Column(String(100), nullable=True)
     provider_response = Column(Text, nullable=True)
+    message_url = Column(String(1024), nullable=True)  # short url or canonical url used in the message
+    error_code = Column(String(64), nullable=True)  # provider-specific error code
     error_message = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

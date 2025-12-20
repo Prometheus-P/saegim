@@ -10,6 +10,12 @@ class OrganizationBase(BaseModel):
     plan_type: PlanType = PlanType.BASIC
     logo_url: Optional[str] = None
 
+    # white-label (public)
+    brand_name: Optional[str] = None
+    brand_logo_url: Optional[str] = None
+    brand_domain: Optional[str] = None
+    hide_saegim: bool = False
+
 
 class OrganizationCreate(OrganizationBase):
     pass

@@ -25,6 +25,8 @@ services:
       LOCAL_UPLOAD_DIR: ${LOCAL_UPLOAD_DIR}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
       MESSAGING_PROVIDER: ${MESSAGING_PROVIDER}
       KAKAO_SENDER_KEY: ${KAKAO_SENDER_KEY}
       KAKAO_TEMPLATE_PROOF_DONE: ${KAKAO_TEMPLATE_PROOF_DONE}
@@ -44,9 +46,11 @@ services:
     build: ./web
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_ADMIN_API_KEY: ${ADMIN_API_KEY}
     ports:
       - "3000:3000"
     volumes:
       - ./web:/app
+      - /app/node_modules
     depends_on:
       - api

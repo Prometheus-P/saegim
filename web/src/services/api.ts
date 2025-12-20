@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // Types
 export interface OrderSummary {
@@ -6,6 +6,7 @@ export interface OrderSummary {
   context: string | null;
   organization_name: string;
   organization_logo: string | null;
+  hide_saegim: boolean;
 }
 
 export interface ProofData {
@@ -13,6 +14,7 @@ export interface ProofData {
   context: string | null;
   organization_name: string;
   organization_logo: string | null;
+  hide_saegim: boolean;
   proof_url: string;
   uploaded_at: string;
 }
@@ -21,6 +23,11 @@ export interface UploadResponse {
   status: string;
   proof_id: number;
   message: string;
+}
+
+export interface ShortResolveResponse {
+  code: string;
+  target_url: string;
 }
 
 /**
@@ -88,4 +95,16 @@ export const getProofByToken = async (token: string): Promise<ProofData | null> 
     console.error('getProofByToken error:', error);
     throw error;
   }
+};
+
+/**
+ * Resolve a short code to a full public proof URL
+ */
+export const resolveShortCode = async (code: string): Promise<ShortResolveResponse | null> => {
+  const res = await fetch(`${API_BASE_URL}/public/s/${encodeURIComponent(code)}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error('Failed to resolve short link');
+  }
+  return res.json();
 };
