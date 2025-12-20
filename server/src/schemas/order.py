@@ -7,7 +7,7 @@ from src.models.order import OrderStatus
 
 class OrderCreate(BaseModel):
     """Schema for creating a new order."""
-    organization_id: int
+    organization_id: Optional[int] = None
     order_number: str
     context: Optional[str] = None
     sender_name: str
@@ -19,7 +19,7 @@ class OrderCreate(BaseModel):
 class OrderResponse(BaseModel):
     """Schema for order response (internal use)."""
     id: int
-    organization_id: int
+    organization_id: Optional[int] = None
     order_number: str
     context: Optional[str] = None
     sender_name: str
@@ -54,3 +54,8 @@ class PublicOrderSummary(BaseModel):
     context: Optional[str] = None
     organization_name: str
     organization_logo: Optional[str] = None
+
+
+class OrderOut(OrderResponse):
+    """Alias for admin/backoffice responses."""
+    pass

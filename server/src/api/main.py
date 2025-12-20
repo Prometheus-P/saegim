@@ -9,7 +9,7 @@ import os
 
 from src.core.config import settings
 from src.utils.rate_limiter import limiter
-from src.api.routes import public_router
+from src.api.routes import public_router, admin_router
 
 # Configure logging
 logging.basicConfig(
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="ProofLink API",
+    title="Saegim API",
     description="QR-based delivery proof system with dual notifications",
     version="1.0.0",
 )
@@ -48,7 +48,11 @@ os.makedirs(upload_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
 
 # Include routers
-app.include_router(public_router)
+API_PREFIX = "/api/v1"
+
+# Include routers
+app.include_router(public_router, prefix=API_PREFIX)
+app.include_router(admin_router, prefix=API_PREFIX)
 
 
 @app.get("/")

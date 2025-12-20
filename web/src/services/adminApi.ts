@@ -1,0 +1,268 @@
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+const headers = (token: string) => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${token}`,
+});
+
+export type Organization = {
+  id: number;
+  name: string;
+  plan_type: 'BASIC' | 'PRO';
+  logo_url?: string | null;
+
+  // white-label (public)
+  brand_name?: string | null;
+  brand_logo_url?: string | null;
+  brand_domain?: string | null;
+  hide_saegim?: boolean;
+
+  // messaging templates (org override)
+  msg_alimtalk_template_sender?: string | null;
+  msg_alimtalk_template_recipient?: string | null;
+  msg_sms_template_sender?: string | null;
+  msg_sms_template_recipient?: string | null;
+  msg_kakao_template_code?: string | null;
+  msg_fallback_sms_enabled?: boolean | null;
+
+  external_org_id?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+};
+
+export type NotificationLog = {
+  id: number;
+  type: string;
+  channel: string;
+  status: string;
+  phone_hash: string;
+  provider_request_id?: string | null;
+  message_url?: string | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  created_at: string;
+  sent_at?: string | null;
+};
+
+export type Me = {
+  sub: string;
+  org_external_id?: string | null;
+  org_role?: string | null;
+  organization?: Organization | null;
+};
+
+export const getMe = async (token: string): Promise<Me> => {
+  const res = await fetch(`${API_BASE_URL}/admin/me`, {
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const getOrgSettings = async (token: string): Promise<Organization> => {
+  const res = await fetch(`${API_BASE_URL}/admin/org`, {
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const updateOrgSettings = async (
+  token: string,
+  payload: Partial<Pick<Organization, 'name' | 'logo_url' | 'brand_name' | 'brand_logo_url' | 'brand_domain' | 'hide_saegim'>>
+): Promise<Organization> => {
+  const res = await fetch(`${API_BASE_URL}/admin/org`, {
+    method: 'PUT',
+    headers: headers(token),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export type Order = {
+  id: number;
+  organization_id?: number;
+  order_number: string;
+  context?: string | null;
+  sender_name: string;
+  recipient_name?: string | null;
+  status: string;
+  created_at: string;
+  updated_at?: string | null;
+};
+
+export type OrderDetail = {
+  order: Order;
+  organization: Pick<Organization, 'id' | 'name' | 'logo_url' | 'brand_name' | 'brand_logo_url' | 'brand_domain' | 'hide_saegim'>;
+  token?: string | null;
+  token_valid: boolean;
+  upload_url?: string | null;
+  public_proof_url?: string | null;
+  short_public_url?: string | null;
+  proof_url?: string | null;
+  proof_uploaded_at?: string | null;
+  notifications?: NotificationLog[];
+};
+
+export type Label = {
+  order_id: number;
+  order_number: string;
+  context?: string | null;
+  status: string;
+  token: string;
+  token_valid: boolean;
+  upload_url: string;
+  public_proof_url: string;
+  organization_name: string;
+  organization_logo?: string | null;
+  hide_saegim?: boolean;
+};
+
+export const listOrganizations = async (token: string): Promise<Organization[]> => {
+  const res = await fetch(`${API_BASE_URL}/admin/organizations`, {
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const createOrganization = async (
+  token: string,
+  payload: {
+    name: string;
+    plan_type?: 'BASIC' | 'PRO';
+    logo_url?: string | null;
+    brand_name?: string | null;
+    brand_logo_url?: string | null;
+    brand_domain?: string | null;
+    hide_saegim?: boolean;
+  }
+): Promise<Organization> => {
+  const res = await fetch(`${API_BASE_URL}/admin/organizations`, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const listOrders = async (
+  token: string,
+  params?: {
+    organization_id?: number;
+    q?: string;
+    status?: string;
+    day?: string; // YYYY-MM-DD (Asia/Seoul)
+    today?: boolean;
+  }
+): Promise<Order[]> => {
+  const qs = new URLSearchParams();
+  if (params?.organization_id) qs.set('organization_id', String(params.organization_id));
+  if (params?.q) qs.set('q', params.q);
+  if (params?.status) qs.set('status', params.status);
+  if (params?.day) qs.set('day', params.day);
+  if (params?.today) qs.set('today', 'true');
+  const url = `${API_BASE_URL}/admin/orders${qs.toString() ? `?${qs.toString()}` : ''}`;
+
+  const res = await fetch(url, { headers: headers(token) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export type CsvImportResult = {
+  created_count: number;
+  created_order_ids: number[];
+  errors: { row: number; message: string }[];
+};
+
+export const importOrdersCsv = async (token: string, file: File, strict?: boolean): Promise<CsvImportResult> => {
+  const form = new FormData();
+  form.append('file', file);
+  const url = `${API_BASE_URL}/admin/orders/import/csv${strict ? '?strict=true' : ''}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const createOrder = async (
+  token: string,
+  payload: {
+    organization_id?: number;
+    order_number: string;
+    context?: string | null;
+    sender_name: string;
+    sender_phone: string;
+    recipient_name?: string | null;
+    recipient_phone?: string | null;
+  }
+): Promise<Order> => {
+  const res = await fetch(`${API_BASE_URL}/admin/orders`, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const getOrderDetail = async (token: string, orderId: number): Promise<OrderDetail> => {
+  const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}`, {
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const issueToken = async (
+  token: string,
+  orderId: number,
+  force?: boolean
+): Promise<{
+  token: string;
+  token_valid: boolean;
+  upload_url: string;
+  public_proof_url: string;
+}> => {
+  const url = `${API_BASE_URL}/admin/orders/${orderId}/token${force ? '?force=true' : ''}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const resendNotify = async (token: string, orderId: number): Promise<{ status: string }> => {
+  const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/notify`, {
+    method: 'POST',
+    headers: headers(token),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const getLabels = async (
+  token: string,
+  payload: { order_ids: number[]; ensure_tokens?: boolean; force?: boolean }
+): Promise<Label[]> => {
+  const res = await fetch(`${API_BASE_URL}/admin/orders/labels`, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify({
+      order_ids: payload.order_ids,
+      ensure_tokens: payload.ensure_tokens ?? true,
+      force: payload.force ?? false,
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};

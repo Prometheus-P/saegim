@@ -45,9 +45,19 @@ class ProofService:
         if existing_proof:
             raise ValueError("Proof already uploaded for this order.")
 
-        # Generate unique filename
+        # Generate unique & safe filename (avoid user-supplied names)
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        safe_filename = f"{order.id}_{timestamp}_{file.filename}"
+        original = os.path.basename(file.filename or "")
+        _, ext = os.path.splitext(original)
+        ext = (ext or "").lower()
+        allowed = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
+        if ext not in allowed:
+            # fallback based on mime
+            if (file.content_type or "").lower() == "image/png":
+                ext = ".png"
+            else:
+                ext = ".jpg"
+        safe_filename = f"{order.id}_{timestamp}{ext}"
         file_path = os.path.join(self.upload_dir, safe_filename)
 
         # Save file

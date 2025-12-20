@@ -5,6 +5,7 @@ from .order import Order, OrderStatus
 from .qr_token import QRToken
 from .proof import Proof
 from .notification import Notification, NotificationType, NotificationChannel, NotificationStatus
+from .short_link import ShortLink
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "NotificationType",
     "NotificationChannel",
     "NotificationStatus",
+    "ShortLink",
 ]

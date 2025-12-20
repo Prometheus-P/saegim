@@ -79,7 +79,7 @@ def seed_test_data():
         print()
         print("Test URLs:")
         print(f"  Proof Landing: http://localhost:3000/proof/{qr_token.token}")
-        print(f"  API Order:     http://localhost:8000/public/order/{qr_token.token}")
+        print(f"  API Order:     http://localhost:8000/api/v1/public/order/{qr_token.token}")
         print()
 
     except Exception as e:
