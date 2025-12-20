@@ -75,3 +75,4 @@ coverage/
 *.bak
 *.tmp
 *.temp
+data/pg/

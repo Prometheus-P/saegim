@@ -1,6 +1,6 @@
 """init core tables
 
-Revision ID: 0001_init
+Revision ID: 0001
 Revises:
 Create Date: 2025-12-19
 
@@ -11,44 +11,30 @@ NOTE
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = "0001_init"
+revision = "0001"
 down_revision = None
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
-    # Enums (keep in sync with src/models)
-    plan_type = sa.Enum("BASIC", "PRO", name="plan_type")
+    # Create Enums first using raw SQL (most reliable approach)
+    op.execute("CREATE TYPE plan_type AS ENUM ('BASIC', 'PRO')")
+    op.execute("CREATE TYPE order_status AS ENUM ('PENDING', 'TOKEN_ISSUED', 'PROOF_UPLOADED', 'NOTIFIED', 'COMPLETED')")
+    op.execute("CREATE TYPE notification_type AS ENUM ('SENDER', 'RECIPIENT')")
+    op.execute("CREATE TYPE notification_channel AS ENUM ('ALIMTALK', 'SMS')")
+    op.execute("CREATE TYPE notification_status AS ENUM ('PENDING', 'SENT', 'FAILED', 'FALLBACK_SENT', 'MOCK_SENT')")
 
-    order_status = sa.Enum(
-        "PENDING",
-        "TOKEN_ISSUED",
-        "PROOF_UPLOADED",
-        "NOTIFIED",
-        "COMPLETED",
-        name="order_status",
-    )
-
-    notification_type = sa.Enum("SENDER", "RECIPIENT", name="notification_type")
-    notification_channel = sa.Enum("ALIMTALK", "SMS", name="notification_channel")
-    notification_status = sa.Enum(
-        "PENDING",
-        "SENT",
-        "FAILED",
-        "FALLBACK_SENT",
-        "MOCK_SENT",
-        name="notification_status",
-    )
-
-    plan_type.create(op.get_bind(), checkfirst=True)
-    order_status.create(op.get_bind(), checkfirst=True)
-    notification_type.create(op.get_bind(), checkfirst=True)
-    notification_channel.create(op.get_bind(), checkfirst=True)
-    notification_status.create(op.get_bind(), checkfirst=True)
+    # Use PostgreSQL ENUM with create_type=False since we already created them
+    plan_type = postgresql.ENUM("BASIC", "PRO", name="plan_type", create_type=False)
+    order_status = postgresql.ENUM("PENDING", "TOKEN_ISSUED", "PROOF_UPLOADED", "NOTIFIED", "COMPLETED", name="order_status", create_type=False)
+    notification_type = postgresql.ENUM("SENDER", "RECIPIENT", name="notification_type", create_type=False)
+    notification_channel = postgresql.ENUM("ALIMTALK", "SMS", name="notification_channel", create_type=False)
+    notification_status = postgresql.ENUM("PENDING", "SENT", "FAILED", "FALLBACK_SENT", "MOCK_SENT", name="notification_status", create_type=False)
 
     # organizations
     op.create_table(
