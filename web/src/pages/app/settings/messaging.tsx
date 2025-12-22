@@ -30,7 +30,7 @@ const renderTemplate = (tpl: string, vars: Record<string, string>) => {
 
 export default function MessagingSettingsPage() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { getAdminToken, role } = useAdminToken();
+  const { getAdminToken, orgRole: role } = useAdminToken();
 
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
