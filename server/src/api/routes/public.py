@@ -2,18 +2,16 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY, HTTP_429_TOO_MANY_REQUESTS
+from starlette.status import HTTP_404_NOT_FOUND, HTTP_422_UNPROCESSABLE_ENTITY
 
 from src.core.database import get_db
 from src.core.config import settings
 from src.services.token_service import TokenService
 from src.services.proof_service import ProofService
 from src.services.short_link_service import ShortLinkService
-from src.services.short_link_service import ShortLinkService
 from src.schemas import PublicOrderSummary, ProofUploadResponse, PublicProofResponse, ProofItem
 from src.models import ProofType
 from src.utils.rate_limiter import limiter, get_rate_limit
-from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +119,7 @@ async def upload_proof(
             status_code=500,
             detail="UPLOAD_FAILED: Failed to save file.",
         )
-    except Exception as e:
+    except Exception:
         logger.exception(f"Unexpected error during proof upload for token {token[:8]}...")
         raise HTTPException(
             status_code=500,
