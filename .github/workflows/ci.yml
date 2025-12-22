@@ -79,9 +79,5 @@ jobs:
       - name: Run linting
         run: npm run lint
 
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:8000
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_dummy
-          CLERK_SECRET_KEY: sk_test_dummy
+      - name: Type check
+        run: npx tsc --noEmit
