@@ -1,21 +1,17 @@
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.security import decrypt_phone, hash_phone
-from src.integrations.messaging.errors import MessagingError
 from src.integrations.messaging.factory import get_primary_provider, get_sms_provider
 from src.models import Notification, NotificationChannel, NotificationStatus, NotificationType
 from src.models.order import Order
 from src.services.message_render import render
 from src.services.short_link_service import ShortLinkService
-
-if TYPE_CHECKING:
-    from src.models import Order as OrderModel
 
 logger = logging.getLogger(__name__)
 

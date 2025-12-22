@@ -25,11 +25,19 @@ Build v1 MVP of ProofLink: QR 증빙(사진) + 자동 메시지 + 공개 링크 
 - HTTPS 필수 (production)
 
 ## Copyright & Attribution
+- **본 프로젝트는 비즈니스 저작권 (Proprietary License) 적용**
+- 무단 복제, 배포, 수정 금지
+- 라이선스 문의: parkdavid31@gmail.com
 - 커밋 메시지에 "Generated with Claude Code" 또는 "Co-Authored-By: Claude" 포함 금지
 - AI 생성 코드임을 명시적으로 표기하지 않음
-- 외부 라이브러리 사용 시 라이선스 호환성 확인
-- MIT, Apache 2.0, BSD 라이선스 선호
-- GPL 라이선스는 프로젝트 영향 검토 후 사용
+- 외부 라이브러리 사용 시 라이선스 호환성 확인 (상용 프로젝트에 적합한지 검토)
+- GPL 라이선스 사용 금지 (copyleft 전파 위험)
+
+## Git Branch Policy
+- **절대 금지**: `main` 브랜치로 직접 push
+- 모든 변경사항은 feature 브랜치에서 작업 후 PR을 통해 병합
+- 브랜치 네이밍: `feat/`, `fix/`, `docs/`, `chore/` 접두사 사용
+- 예시: `feat/qr-proof-upload`, `fix/auth-token-expiry`
 
 ## Git Commit Rules
 - Conventional Commits 형식 사용:

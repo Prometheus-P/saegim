@@ -70,7 +70,7 @@ export const getOrgSettings = async (token: string): Promise<Organization> => {
 
 export const updateOrgSettings = async (
   token: string,
-  payload: Partial<Pick<Organization, 'name' | 'logo_url' | 'brand_name' | 'brand_logo_url' | 'brand_domain' | 'hide_saegim'>>
+  payload: Partial<Pick<Organization, 'name' | 'logo_url' | 'brand_name' | 'brand_logo_url' | 'brand_domain' | 'hide_saegim' | 'msg_alimtalk_template_sender' | 'msg_alimtalk_template_recipient' | 'msg_sms_template_sender' | 'msg_sms_template_recipient' | 'msg_kakao_template_code' | 'msg_fallback_sms_enabled'>>
 ): Promise<Organization> => {
   const res = await fetch(`${API_BASE_URL}/admin/org`, {
     method: 'PUT',
